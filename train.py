@@ -2,6 +2,7 @@ from typing import Tuple
 import pandas as pd
 import numpy as np
 
+from evaluation_service import EvaluationService
 from kfold import Kfold
 from random_forest import RandomForest
 
@@ -26,9 +27,8 @@ class Train:
         return self.model.predict(test_features)
 
     def _separate_dataset(self) -> Tuple[np.array, np.array, np.array, np.array]:
-        return self.kfolds.get_next_fold()
+        return self.kfold.get_next_fold()
 
-    def _evaluate_model(self, test_predictions, test_labels):
-        pass
-
-
+    @staticmethod
+    def _evaluate_model(test_predictions, test_labels):
+        return EvaluationService.accuracy_score(test_predictions, test_labels)
