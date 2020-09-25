@@ -6,10 +6,10 @@ import numpy as np
 
 
 class Kfold:
-    def __init__(self, features: np.array, labels: np.array, folds_num: int = 5):
+    def __init__(self, dataset: np.DataFrame, target_column: str, folds_num: int = 5):
         self.folds_num = folds_num
-        self.labels = labels
-        self.features = features
+        self.labels = np.array(dataset[target_column])
+        self.features = np.array(dataset.drop(target_column, axis=1))
         self.folds = self._generate_folds()
         self.current_fold = 0
 

@@ -8,11 +8,11 @@ from random_forest import RandomForest
 
 
 class Train:
-    def __init__(self, model: RandomForest, kfold: Kfold, dataset: pd.DataFrame, target_column: str):
+    def __init__(self, model: RandomForest, dataset: pd.DataFrame, target_column: str):
         self.target_column = target_column
         self.dataset = dataset
         self.model = model
-        self.kfold = kfold
+        self.kfold = Kfold(dataset, target_column)
 
     def execute(self):
         train_features, test_features, train_labels, test_labels = self._separate_dataset()
