@@ -3,10 +3,11 @@ from random import shuffle
 from typing import Tuple
 
 import numpy as np
+import pandas as pd
 
 
 class Kfold:
-    def __init__(self, dataset: np.DataFrame, target_column: str, folds_num: int = 5):
+    def __init__(self, dataset: pd.DataFrame, target_column: str, folds_num: int = 5):
         self.folds_num = folds_num
         self.labels = np.array(dataset[target_column])
         self.features = np.array(dataset.drop(target_column, axis=1))

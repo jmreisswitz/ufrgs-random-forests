@@ -37,6 +37,7 @@ def main():
         get_dataset(),
         get_target_column_from_argparser()
     )
+    train.execute()
 
 
 if __name__ == '__main__':
