@@ -75,20 +75,30 @@ class LeafNode(TreeNode):
         return self.predicted_class
 
 
+class CategoricalNode(TreeNode):
+    def __init__(self, children, children_labels):
+        self.children_labels = children_labels
+        self.children = children
+
+    def predict_value(self, value):
+        label_index = self.children_labels.index(value)
+        return self.children[label_index]
+
+
 class TreeBuilder:
     def __init__(self, train_features: np.array, train_labels: np.array):
         self.train_features = train_features
         self.train_labels = train_labels
         self.gain_info_service = GainInfoService(self.features_and_labels_to_dataframe())
 
-    def features_and_labels_to_dataframe(self):
+    def features_and_labels_to_dataframe(self) -> pd.DataFrame:
         return pd.DataFrame([self.train_features], columns=self.train_labels)
 
-    def is_leaf_node(self):
+    def is_leaf_node(self) -> bool:
         # if all trains_labels are the same or if there are no more features to evaluate
         return len(set(self.train_labels)) == 1 or len(self.train_features) == 0
 
-    def build_node(self):
+    def build_node(self) -> TreeNode:
         if self.is_leaf_node():
             return LeafNode(self.get_prediction_label())
         information_score, best_column = self.get_best_feature()
@@ -101,13 +111,20 @@ class TreeBuilder:
     def get_best_feature(self):
         return self.gain_info_service.build_tree()
 
-    def is_categorical_data(self, column):
+    def is_categorical_data(self, column) -> bool:
         return not isinstance(self.train_features[column][0], numbers.Number)
 
-    def generate_categorical_children(self, column):
-        pass  # TODO
+    def generate_categorical_children(self, column) -> CategoricalNode:
+        children_list = []
+        children_labels = []
+        for possible_value in self.train_features[column].unique():
+            new_train_features, new_train_labels = self.remove_categorical_data_from(column)
+            builder = TreeBuilder(new_train_features, new_train_labels)
+            children_list.append(builder.build_node())
+            children_labels.append(possible_value)
+        return CategoricalNode(children_list, children_labels)
 
-    def generate_numerical_children(self, column):
+    def generate_numerical_children(self, column) -> NumericalNode:
         cutting_point = self.get_cutting_point_on_numerical_data(column)
         left_features, left_labels, right_features, right_labels = self.divide_numerical_dataset(column, cutting_point)
         left_builder = TreeBuilder(left_features, left_labels)
@@ -133,6 +150,12 @@ class TreeBuilder:
                         self.train_features[i] not in bellow_cutting_point_indexes]), \
                np.array([self.train_labels[i] for i in range(len(self.train_labels)) if
                         self.train_labels[i] not in bellow_cutting_point_indexes])
+
+    def remove_categorical_data_from(self, label):
+        indexes_of_other_labels = [i for i in self.train_features
+                                   if self.train_features[i] != label]
+        return np.array([self.train_features[i] for i in indexes_of_other_labels]), \
+                np.array([self.train_features[i] for i in indexes_of_other_labels])
 
 
 class RandomTree:
