@@ -14,11 +14,11 @@ def separate_dataset(dataset):
 def main():
     dataset = pd.read_csv('benchmark.csv', sep=';')
     features, labels = separate_dataset(dataset)
-    print(features)
-    print(labels)
+    # print(features)
+    # print(labels)
     tree = RandomTree()
     tree.fit(features, labels)
-    print(tree)
+    print(f'{tree}')
 
 
 if __name__ == '__main__':

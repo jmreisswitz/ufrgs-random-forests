@@ -49,9 +49,15 @@ class RandomForest:
 
 
 class TreeNode(ABC):
+    def __init__(self):
+        self.children = []
+
     @abstractmethod
     def predict_value(self, value):
         pass
+
+    def __repr__(self):
+        return f'{self.__class__.__name__}({self.children})'
 
 
 class NumericalNode(TreeNode):
@@ -69,6 +75,7 @@ class NumericalNode(TreeNode):
 
 class LeafNode(TreeNode):
     def __init__(self, predicted_class):
+        super().__init__()
         self.predicted_class = predicted_class
 
     def predict_value(self, value):
@@ -77,6 +84,7 @@ class LeafNode(TreeNode):
 
 class CategoricalNode(TreeNode):
     def __init__(self, children, children_labels):
+        super().__init__()
         self.children_labels = children_labels
         self.children = children
 
@@ -86,10 +94,11 @@ class CategoricalNode(TreeNode):
 
 
 class TreeBuilder:
-    def __init__(self, train_features: np.array, train_labels: np.array):
+    def __init__(self, train_features: np.array, train_labels: np.array, already_used_columns: set):
         self.train_features = train_features
         self.train_labels = train_labels
-        self.gain_info_service = GainInfoService(self.features_and_labels_to_gain_info_entry())
+        self.already_used_columns = already_used_columns
+        self.gain_info_service = GainInfoService(self.features_and_labels_to_gain_info_entry(), already_used_columns)
 
     def features_and_labels_to_gain_info_entry(self):
         features_dataframe = pd.DataFrame(self.train_features)
@@ -111,11 +120,13 @@ class TreeBuilder:
         if self.is_leaf_node():
             return LeafNode(self.get_prediction_label())
         information_score, best_column = self.get_best_feature()
-        logger.info(f'Got score {information_score} from {best_column}')
+        print(f'Got score {information_score} from {best_column}')
+        if information_score == 0:
+            return LeafNode(self.get_prediction_label())
         if self.is_categorical_data(best_column):
-            self.generate_categorical_children(best_column)
+            return self.generate_categorical_children(best_column)
         else:
-            self.generate_numerical_children(best_column)
+            return self.generate_numerical_children(best_column)
 
     def get_best_feature(self):
         return self.gain_info_service.build_tree()
@@ -126,13 +137,17 @@ class TreeBuilder:
         # print(f'isntance: {self.train_features[0][column]}')
         return not isinstance(self.train_features[0][column], numbers.Number)
 
+    def get_new_already_used_columns(self, column) -> set:
+        self.already_used_columns.add(column)
+        return self.already_used_columns
+
     def generate_categorical_children(self, column) -> CategoricalNode:
         children_list = []
         children_labels = []
         possible_values = set([feature_row[column] for feature_row in self.train_features])  # self.train_features[column])
         for possible_value in possible_values:
             new_train_features, new_train_labels = self.remove_categorical_data_from(possible_value, column)
-            builder = TreeBuilder(new_train_features, new_train_labels)
+            builder = TreeBuilder(new_train_features, new_train_labels, self.get_new_already_used_columns(column))
             children_list.append(builder.build_node())
             children_labels.append(possible_value)
         return CategoricalNode(children_list, children_labels)
@@ -140,8 +155,8 @@ class TreeBuilder:
     def generate_numerical_children(self, column) -> NumericalNode:
         cutting_point = self.get_cutting_point_on_numerical_data(column)
         left_features, left_labels, right_features, right_labels = self.divide_numerical_dataset(column, cutting_point)
-        left_builder = TreeBuilder(left_features, left_labels)
-        right_builder = TreeBuilder(right_features, right_labels)
+        left_builder = TreeBuilder(left_features, left_labels, self.get_new_already_used_columns(column))
+        right_builder = TreeBuilder(right_features, right_labels, self.get_new_already_used_columns(column))
         return NumericalNode(
             cutting_point,
             left_builder.build_node(),
@@ -181,7 +196,8 @@ class RandomTree:
     def fit(self, train_features: np.array, train_labels: np.array):
         if self.attributes_to_use is None:
             self._init_attributes_to_use(train_features)
-        tree_builder = TreeBuilder(train_features, train_labels)
+        already_used_columns = set()
+        tree_builder = TreeBuilder(train_features, train_labels, already_used_columns)
         self.starting_node = tree_builder.build_node()
 
     def predict(self, test_feature):
@@ -191,3 +207,6 @@ class RandomTree:
         number_of_attributes = len(train_features[0])
         self.number_of_attributes_to_use = int(sqrt(number_of_attributes))
         self.attributes_to_use = random.sample([i for i in range(number_of_attributes)], self.number_of_attributes_to_use)
+
+    def __repr__(self):
+        return str(self.starting_node)

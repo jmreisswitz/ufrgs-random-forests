@@ -6,7 +6,8 @@ def log2(x):
 
 
 class GainInfoService:
-    def __init__(self, data):
+    def __init__(self, data, already_used_columns: set):
+        self.already_used_columns = already_used_columns
         self.data = data
 
     @staticmethod
@@ -39,11 +40,14 @@ class GainInfoService:
         current_score = self.entropy(self.data)  # the entropy of the class
 
         # In this values we will chose the best.
+        gain = 0.0
         best_gain = 0.0
         best_column = None
 
         column_count = len(self.data[0][:-1])  # all the columns less the last one, the class column
         for col in range(0, column_count):
+            if col in self.already_used_columns:
+                continue
             column_values = {}
             gain = 0.0
             for row in self.data:
@@ -55,7 +59,7 @@ class GainInfoService:
             gain = current_score - gain  # the total gain of the column
             if gain >= best_gain and len(set1) != 0 and len(set2) != 0:  # we chose the biggest gain.
                 best_gain = gain
-                best_column = (col)
+                best_column = col
         return best_gain, best_column
 
     # # this function receive the dataset and return the best column index and the Gain of the column
