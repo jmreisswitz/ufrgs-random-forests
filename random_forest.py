@@ -102,9 +102,9 @@ class TreeBuilder:
 
     def is_leaf_node(self) -> bool:
         # if all trains_labels are the same or if there are no more features to evaluate
-        print(f'is leaf: {len(set(self.train_labels)) == 1 or len(self.train_features) == 0}')
-        print(f'labels: {self.train_labels}')
-        print(f'features: {self.train_features}')
+        # print(f'is leaf: {len(set(self.train_labels)) == 1 or len(self.train_features) == 0}')
+        # print(f'labels: {self.train_labels}')
+        # print(f'features: {self.train_features}')
         return len(set(self.train_labels)) == 1 or len(self.train_features) == 0
 
     def build_node(self) -> TreeNode:
@@ -121,13 +121,15 @@ class TreeBuilder:
         return self.gain_info_service.build_tree()
 
     def is_categorical_data(self, column) -> bool:
-        return not isinstance(self.train_features[column][0], numbers.Number)
+        # print(f'features: {self.train_features}')
+        # print(f'Column: {column}')
+        # print(f'isntance: {self.train_features[0][column]}')
+        return not isinstance(self.train_features[0][column], numbers.Number)
 
     def generate_categorical_children(self, column) -> CategoricalNode:
         children_list = []
         children_labels = []
         possible_values = set([feature_row[column] for feature_row in self.train_features])  # self.train_features[column])
-        print(possible_values)
         for possible_value in possible_values:
             new_train_features, new_train_labels = self.remove_categorical_data_from(possible_value, column)
             builder = TreeBuilder(new_train_features, new_train_labels)
@@ -151,7 +153,7 @@ class TreeBuilder:
 
     def get_prediction_label(self):
         train_labels_as_list = self.train_labels.tolist()
-        return max(set(self.train_labels_as_list), key=self.train_labels_as_list.count)
+        return max(set(train_labels_as_list), key=train_labels_as_list.count)
 
     def divide_numerical_dataset(self, column, cutting_point):
         bellow_cutting_point_indexes = [i for i in self.train_features[column]
@@ -164,7 +166,6 @@ class TreeBuilder:
                         self.train_labels[i] not in bellow_cutting_point_indexes])
 
     def remove_categorical_data_from(self, value, column):
-        print(self.train_features[0][column])
         indexes_of_other_labels = [i for i in range(len(self.train_features))
                                    if self.train_features[i][column] != value]
         return np.array([self.train_features[i] for i in indexes_of_other_labels]), \
