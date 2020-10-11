@@ -1,5 +1,6 @@
 import numbers
 import random
+from abc import ABC, abstractmethod
 from math import sqrt
 
 import logging
@@ -8,7 +9,6 @@ import numpy as np
 
 from bootstrap import Bootstrap
 from gain_info import GainInfoService
-
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -48,13 +48,37 @@ class RandomForest:
         return max(set(random_trees_predictions), key=random_trees_predictions.count())
 
 
-class TreeNode:
+class TreeNode(ABC):
+    @abstractmethod
+    def predict_value(self, value):
+        pass
+
+
+class NumericalNode(TreeNode):
+    def __init__(self, cutting_point, left_child: TreeNode, right_child: TreeNode):
+        super().__init__()
+        self.cutting_point = cutting_point
+        self.right_child = right_child
+        self.left_child = left_child
+
+    def predict_value(self, value):
+        if self.cutting_point > value:
+            return self.left_child.predict_value(value)
+        return self.right_child.predict_value(value)
+
+
+class LeafNode(TreeNode):
+    def __init__(self, predicted_class):
+        self.predicted_class = predicted_class
+
+    def predict_value(self, value):
+        return self.predicted_class
+
+
+class TreeBuilder:
     def __init__(self, train_features: np.array, train_labels: np.array):
         self.train_features = train_features
         self.train_labels = train_labels
-        self.is_leaf = self.is_leaf_node()
-        self.is_categorical = None
-        self.children = []
         self.gain_info_service = GainInfoService(self.features_and_labels_to_dataframe())
 
     def features_and_labels_to_dataframe(self):
@@ -64,9 +88,9 @@ class TreeNode:
         # if all trains_labels are the same or if there are no more features to evaluate
         return len(set(self.train_labels)) == 1 or len(self.train_features) == 0
 
-    def build(self):
-        if self.is_leaf:
-            return
+    def build_node(self):
+        if self.is_leaf_node():
+            return LeafNode(self.get_prediction_label())
         information_score, best_column = self.get_best_feature()
         logger.info(f'Got score {information_score} from {best_column}')
         if self.is_categorical_data(best_column):
@@ -81,13 +105,34 @@ class TreeNode:
         return not isinstance(self.train_features[column][0], numbers.Number)
 
     def generate_categorical_children(self, column):
-        pass
+        pass  # TODO
 
     def generate_numerical_children(self, column):
         cutting_point = self.get_cutting_point_on_numerical_data(column)
+        left_features, left_labels, right_features, right_labels = self.divide_numerical_dataset(column, cutting_point)
+        left_builder = TreeBuilder(left_features, left_labels)
+        right_builder = TreeBuilder(right_features, right_labels)
+        return NumericalNode(
+            cutting_point,
+            left_builder.build_node(),
+            right_builder.build_node()
+        )
 
     def get_cutting_point_on_numerical_data(self, column):
         return self.train_features[column].average()
+
+    def get_prediction_label(self):
+        return np.bincount(self.train_labels).argmax()
+
+    def divide_numerical_dataset(self, column, cutting_point):
+        bellow_cutting_point_indexes = [i for i in self.train_features[column]
+                                        if self.train_features[column] < cutting_point]
+        return np.array([self.train_features[i] for i in bellow_cutting_point_indexes]), \
+               np.array([self.train_labels[i] for i in bellow_cutting_point_indexes]), \
+               np.array([self.train_features[i] for i in range(len(self.train_features)) if
+                        self.train_features[i] not in bellow_cutting_point_indexes]), \
+               np.array([self.train_labels[i] for i in range(len(self.train_labels)) if
+                        self.train_labels[i] not in bellow_cutting_point_indexes])
 
 
 class RandomTree:
@@ -99,11 +144,11 @@ class RandomTree:
     def fit(self, train_features: np.array, train_labels: np.array):
         if self.attributes_to_use is None:
             self._init_attributes_to_use(train_features)
-        self.starting_node = TreeNode(train_features, train_labels)
-        self.starting_node.build()
+        tree_builder = TreeBuilder(train_features, train_labels)
+        self.starting_node = tree_builder.build_node()
 
     def predict(self, test_feature):
-        pass  # TODO
+        return self.starting_node.predict_value(test_feature)
 
     def _init_attributes_to_use(self, train_features: np.array):
         number_of_attributes = len(train_features[0])
