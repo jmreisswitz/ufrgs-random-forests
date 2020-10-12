@@ -40,7 +40,6 @@ class GainInfoService:
         current_score = self.entropy(self.data)  # the entropy of the class
 
         # In this values we will chose the best.
-        gain = 0.0
         best_gain = 0.0
         best_column = None
 
