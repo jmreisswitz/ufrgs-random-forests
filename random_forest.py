@@ -49,42 +49,61 @@ class RandomForest:
 
 
 class TreeNode(ABC):
-    def __init__(self):
+    def __init__(self, column, condition):
+        self.condition = condition
         self.children = []
+        self.column = column
 
     @abstractmethod
     def predict_value(self, value):
         pass
 
+    @staticmethod
+    def get_tabs(depth):
+        return '\t' * depth
+
+    def print_node(self, columns_names, depth):
+        print(f"{self.get_tabs(depth)}{self.condition} -> {self.__class__.__name__} {columns_names[self.column]}:")
+        for child in self.children:
+            child.print_node(columns_names, depth + 1)
+
     def __repr__(self):
-        return f'{self.__class__.__name__}({self.children})'
+        return_string = f'{self.condition} -> {self.__class__.__name__} {self.column}:'
+        for child in self.children:
+            return_string += f'\t{child}\n'
+        return return_string[:-1]
 
 
 class NumericalNode(TreeNode):
-    def __init__(self, cutting_point, left_child: TreeNode, right_child: TreeNode):
-        super().__init__()
+    def __init__(self, column, cutting_point, left_child: TreeNode, right_child: TreeNode):
+        super().__init__(column, cutting_point)
         self.cutting_point = cutting_point
-        self.right_child = right_child
-        self.left_child = left_child
+        self.children = [left_child, right_child]
 
     def predict_value(self, value):
         if self.cutting_point > value:
-            return self.left_child.predict_value(value)
-        return self.right_child.predict_value(value)
+            return self.children[0].predict_value(value)
+        return self.children[1].predict_value(value)
 
 
 class LeafNode(TreeNode):
-    def __init__(self, predicted_class):
-        super().__init__()
+    def __init__(self, condition, predicted_class):
+        super().__init__(None, condition)
         self.predicted_class = predicted_class
+
+    def print_node(self, columns_names, depth):
+        print(f"{self.get_tabs(depth)}{self.condition} -> {self.__class__.__name__}: {self.predicted_class}")
 
     def predict_value(self, value):
         return self.predicted_class
 
+    def __repr__(self):
+        return f'{self.condition} -> {self.__class__.__name__}: {self.predicted_class}'
+
 
 class CategoricalNode(TreeNode):
-    def __init__(self, children, children_labels):
-        super().__init__()
+    def __init__(self, condition, column, children, children_labels):
+        super().__init__(column, condition)
         self.children_labels = children_labels
         self.children = children
 
@@ -94,7 +113,8 @@ class CategoricalNode(TreeNode):
 
 
 class TreeBuilder:
-    def __init__(self, train_features: np.array, train_labels: np.array, already_used_columns: set):
+    def __init__(self, condition_value, train_features: np.array, train_labels: np.array, already_used_columns: set):
+        self.condition_value = condition_value
         self.train_features = train_features
         self.train_labels = train_labels
         self.already_used_columns = already_used_columns
@@ -110,11 +130,11 @@ class TreeBuilder:
 
     def build_node(self) -> TreeNode:
         if self.is_leaf_node():
-            return LeafNode(self.get_prediction_label())
+            return LeafNode(self.condition_value, self.get_prediction_label())
         information_score, best_column = self.get_best_feature()
         print(f'Got score {information_score} from {best_column}')
         if information_score == 0:
-            return LeafNode(self.get_prediction_label())
+            return LeafNode(self.condition_value, self.get_prediction_label())
         if self.is_categorical_data(best_column):
             return self.generate_categorical_children(best_column)
         else:
@@ -137,17 +157,18 @@ class TreeBuilder:
         logger.info(possible_values)
         for possible_value in possible_values:
             new_train_features, new_train_labels = self.remove_categorical_data_from(possible_value, column)
-            builder = TreeBuilder(new_train_features, new_train_labels, self.get_new_already_used_columns(column))
+            builder = TreeBuilder(possible_value, new_train_features, new_train_labels, self.get_new_already_used_columns(column))
             children_list.append(builder.build_node())
             children_labels.append(possible_value)
-        return CategoricalNode(children_list, children_labels)
+        return CategoricalNode(self.condition_value, column, children_list, children_labels)
 
     def generate_numerical_children(self, column) -> NumericalNode:
         cutting_point = self.get_cutting_point_on_numerical_data(column)
         left_features, left_labels, right_features, right_labels = self.divide_numerical_dataset(column, cutting_point)
-        left_builder = TreeBuilder(left_features, left_labels, self.get_new_already_used_columns(column))
-        right_builder = TreeBuilder(right_features, right_labels, self.get_new_already_used_columns(column))
+        left_builder = TreeBuilder('<', left_features, left_labels, self.get_new_already_used_columns(column))
+        right_builder = TreeBuilder('>', right_features, right_labels, self.get_new_already_used_columns(column))
         return NumericalNode(
+            column,
             cutting_point,
             left_builder.build_node(),
             right_builder.build_node()
@@ -187,7 +208,7 @@ class RandomTree:
         if self.attributes_to_use is None:
             self._init_attributes_to_use(train_features)
         already_used_columns = set()
-        tree_builder = TreeBuilder(train_features, train_labels, already_used_columns)
+        tree_builder = TreeBuilder('start', train_features, train_labels, already_used_columns)
         self.starting_node = tree_builder.build_node()
 
     def predict(self, test_feature):
@@ -197,6 +218,9 @@ class RandomTree:
         number_of_attributes = len(train_features[0])
         self.number_of_attributes_to_use = int(sqrt(number_of_attributes))
         self.attributes_to_use = random.sample([i for i in range(number_of_attributes)], self.number_of_attributes_to_use)
+
+    def print_tree(self, columns_names: dict):
+        self.starting_node.print_node(columns_names, 0)
 
     def __repr__(self):
         return str(self.starting_node)

@@ -11,6 +11,15 @@ def separate_dataset(dataset):
     return features, labels
 
 
+def get_columns_dict(dataset):
+    columns_dict = dict()
+    counter = 0
+    for column in dataset.columns:
+        columns_dict[counter] = column
+        counter += 1
+    return columns_dict
+
+
 def main():
     dataset = pd.read_csv('benchmark.csv', sep=';')
     features, labels = separate_dataset(dataset)
@@ -18,7 +27,8 @@ def main():
     # print(labels)
     tree = RandomTree()
     tree.fit(features, labels)
-    print(f'{tree}')
+    # print(f'{tree}')
+    tree.print_tree(get_columns_dict(dataset))
 
 
 if __name__ == '__main__':
