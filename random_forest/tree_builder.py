@@ -3,7 +3,7 @@ import numbers
 import pandas as pd
 import numpy as np
 
-from gain_info2 import buildtree
+from gain_info import buildtree
 from random_forest.tree_nodes import TreeNode, LeafNode, CategoricalNode, NumericalNode
 
 
