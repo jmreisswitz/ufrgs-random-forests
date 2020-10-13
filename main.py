@@ -2,7 +2,6 @@ import argparse
 import random
 import pandas as pd
 
-from kfold import Kfold
 from random_forest.random_forest import RandomForest
 from train import Train
 
@@ -32,6 +31,12 @@ def get_dataset():
     return pd.read_csv(dataset_path, sep='\t')
 
 
+def print_model_performance(model_performance):
+    print('kfold,accuracy')
+    for fold, accuracy in model_performance:
+        print(f'{fold},{accuracy}')
+
+
 def main():
     random.seed(42)
     dataset = get_dataset()
@@ -41,7 +46,7 @@ def main():
         get_target_column_from_argparser(dataset)
     )
     model_performance = train.execute()
-    print(f'Model got accuracy score = {model_performance}')
+    print_model_performance(model_performance)
 
 
 if __name__ == '__main__':

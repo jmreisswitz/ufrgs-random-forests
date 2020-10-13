@@ -12,13 +12,17 @@ class Train:
         self.target_column = target_column
         self.dataset = dataset
         self.model = model
-        self.kfold = Kfold(dataset, target_column)
+        self.number_of_folds = 5
+        self.kfold = Kfold(dataset, target_column, folds_num=self.number_of_folds)
 
     def execute(self):
-        train_features, test_features, train_labels, test_labels = self._separate_dataset()
-        self._train(train_features, train_labels)
-        test_predictions = self._predict(test_features)
-        return self._evaluate_model(test_predictions, test_labels)
+        evaluations = []
+        for i in range(self.number_of_folds):
+            train_features, test_features, train_labels, test_labels = self._separate_dataset()
+            self._train(train_features, train_labels)
+            test_predictions = self._predict(test_features)
+            evaluations.append((i+1, self._evaluate_model(test_predictions, test_labels)))
+        return evaluations
 
     def _train(self, train_features: np.array, train_labels: np.array) -> None:
         self.model.fit(train_features, train_labels)
