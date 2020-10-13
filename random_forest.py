@@ -131,7 +131,7 @@ class TreeBuilder:
     def build_node(self) -> TreeNode:
         if self.is_leaf_node():
             return LeafNode(self.condition_value, self.get_prediction_label())
-        information_score, best_column = self.get_best_feature()
+        information_score, best_column, _ = self.get_best_feature()
         print(f'Got score {information_score} from {best_column}')
         if information_score == 0:
             return LeafNode(self.condition_value, self.get_prediction_label())
