@@ -24,7 +24,7 @@ class Train:
         self.model.fit(train_features, train_labels)
 
     def _predict(self, test_features: np.array) -> np.array:
-        return self.model.predict(test_features)
+        return self.model.predict_test_data(test_features)
 
     def _separate_dataset(self) -> Tuple[np.array, np.array, np.array, np.array]:
         return self.kfold.get_next_fold()

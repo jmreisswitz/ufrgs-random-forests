@@ -16,7 +16,7 @@ class TreeNode(ABC):
         return '\t' * depth
 
     def print_node(self, columns_names, depth):
-        print(f"{self.get_tabs(depth)}{self.condition} -> {self.__class__.__name__} {columns_names[self.column]}:")
+        print(f"{self.get_tabs(depth)}{self.condition} -> {self.__class__.__name__} {columns_names[self.column] if columns_names is not None else self.column}:")
         for child in self.children:
             child.print_node(columns_names, depth + 1)
 

@@ -29,6 +29,3 @@ class RandomTree:
 
     def print_tree(self, columns_names: dict):
         self.starting_node.print_node(columns_names, 0)
-
-    def __repr__(self):
-        return str(self.starting_node)
