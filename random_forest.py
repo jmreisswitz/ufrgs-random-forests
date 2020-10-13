@@ -55,7 +55,7 @@ class TreeNode(ABC):
         self.column = column
 
     @abstractmethod
-    def predict_value(self, value):
+    def predict_value(self, features):
         pass
 
     @staticmethod
@@ -80,10 +80,10 @@ class NumericalNode(TreeNode):
         self.cutting_point = cutting_point
         self.children = [left_child, right_child]
 
-    def predict_value(self, value):
-        if self.cutting_point > value:
-            return self.children[0].predict_value(value)
-        return self.children[1].predict_value(value)
+    def predict_value(self, features):
+        if self.cutting_point > features:
+            return self.children[0].predict_features(features)
+        return self.children[1].predict_value(features)
 
 
 class LeafNode(TreeNode):
@@ -94,7 +94,7 @@ class LeafNode(TreeNode):
     def print_node(self, columns_names, depth):
         print(f"{self.get_tabs(depth)}{self.condition} -> {self.__class__.__name__}: {self.predicted_class}")
 
-    def predict_value(self, value):
+    def predict_value(self, features):
         return self.predicted_class
 
     def __repr__(self):
@@ -107,9 +107,9 @@ class CategoricalNode(TreeNode):
         self.children_labels = children_labels
         self.children = children
 
-    def predict_value(self, value):
-        label_index = self.children_labels.index(value)
-        return self.children[label_index]
+    def predict_value(self, features):
+        label_index = self.children_labels.index(features[self.column])
+        return self.children[label_index].predict_value(features)
 
 
 class TreeBuilder:
