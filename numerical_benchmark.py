@@ -42,7 +42,7 @@ def predict_values(tree):
 
 
 def main():
-    dataset = pd.read_csv('diabetes.csv', sep=',')
+    dataset = pd.read_csv('datasets/diabetes.csv', sep=',')
     # pd.options.display.max_columns = dataset.shape[1]
     # print(dataset.describe())
     features, labels = separate_dataset(dataset)

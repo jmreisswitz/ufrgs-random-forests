@@ -33,7 +33,7 @@ def predict_values(tree):
 
 
 def main():
-    dataset = pd.read_csv('benchmark.csv', sep=';')
+    dataset = pd.read_csv('datasets/benchmark.csv', sep=';')
     features, labels = separate_dataset(dataset)
     tree = RandomTree()
     tree.fit(features, labels)
