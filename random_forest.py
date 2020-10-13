@@ -75,13 +75,14 @@ class TreeNode(ABC):
 
 
 class NumericalNode(TreeNode):
-    def __init__(self, column, cutting_point, left_child: TreeNode, right_child: TreeNode):
-        super().__init__(column, cutting_point)
+    def __init__(self, column, condition, cutting_point, left_child: TreeNode, right_child: TreeNode):
+        # condition here is only used for printing purposes
+        super().__init__(column, condition)
         self.cutting_point = cutting_point
         self.children = [left_child, right_child]
 
     def predict_value(self, features):
-        if self.cutting_point > features:
+        if self.cutting_point > features[self.column]:
             return self.children[0].predict_value(features)
         return self.children[1].predict_value(features)
 
@@ -122,16 +123,24 @@ class TreeBuilder:
             pd.concat([features_dataframe, pd.Series(self.train_labels)], axis=1, sort=False)).tolist()
 
     def is_leaf_node(self) -> bool:
-        # if all trains_labels are the same or if there are no more features to evaluate
-        return len(set(self.train_labels)) == 1 or len(self.train_features) == 0
+        # if all trains_labels are the same
+        if len(set(self.train_labels)) == 1:
+            return True
+         # or if there are no more features to evaluate
+        if len(self.train_features) == 0:
+            return True
+        # or if all columns are already used
+        if len(self.already_used_columns) == len(self.train_features[0]):
+            return True
+        return False
 
     def build_node(self) -> TreeNode:
         if self.is_leaf_node():
             return LeafNode(self.condition_value, self.get_prediction_label())
         information_score, best_column, _ = self.get_best_feature()
         print(f'Got score {information_score} from {best_column}')
-        if information_score == 0:
-            return LeafNode(self.condition_value, self.get_prediction_label())
+        # if information_score == 0:
+        #     return LeafNode(self.condition_value, self.get_prediction_label())
         if self.is_categorical_data(best_column):
             return self.generate_categorical_children(best_column)
         else:
@@ -151,7 +160,6 @@ class TreeBuilder:
         children_list = []
         children_labels = []
         possible_values = set([feature_row[column] for feature_row in self.train_features])  # self.train_features[column])
-        logger.info(possible_values)
         for possible_value in possible_values:
             new_train_features, new_train_labels = self.remove_categorical_data_from(possible_value, column)
             builder = TreeBuilder(possible_value, new_train_features, new_train_labels, self.get_new_already_used_columns(column))
@@ -162,10 +170,11 @@ class TreeBuilder:
     def generate_numerical_children(self, column) -> NumericalNode:
         cutting_point = self.get_cutting_point_on_numerical_data(column)
         left_features, left_labels, right_features, right_labels = self.divide_numerical_dataset(column, cutting_point)
-        left_builder = TreeBuilder('<', left_features, left_labels, self.get_new_already_used_columns(column))
-        right_builder = TreeBuilder('>', right_features, right_labels, self.get_new_already_used_columns(column))
+        left_builder = TreeBuilder(f'< {cutting_point}', left_features, left_labels, self.get_new_already_used_columns(column))
+        right_builder = TreeBuilder(f'> {cutting_point}', right_features, right_labels, self.get_new_already_used_columns(column))
         return NumericalNode(
             column,
+            self.condition_value,
             cutting_point,
             left_builder.build_node(),
             right_builder.build_node()

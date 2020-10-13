@@ -21,16 +21,24 @@ def get_columns_dict(dataset):
     return columns_dict
 
 
-# def predict_values(tree):
-#     # Type: [Tempo, Temperatura, umidade, ventoso]
-#     prediction = tree.predict(['Ensolarado', 'Quente', 'Alta', 'Falso'])
-#     print(f'Não = {prediction}')
-#     prediction = tree.predict(['Chuvoso', 'Quente', 'Alta', 'Falso'])
-#     print(f'Sim = {prediction}')
-#     prediction = tree.predict(['Nublado', 'Quente', 'Alta', 'Falso'])
-#     print(f'Sim = {prediction}')
-#     prediction = tree.predict(['Chuvoso', 'Quente', 'Alta', 'Verdadeiro'])
-#     print(f'Não = {prediction}')
+def predict_values(tree):
+    # Type: [Pregnancies	Glucose	BloodPressure	SkinThickness	Insulin	BMI	Age	]
+    prediction = tree.predict([0, 200, 0, 0, 0, 0, 0])
+    print(f'1 = {prediction}')
+    prediction = tree.predict([6, 100, 70, 0, 0, 0, 0])
+    print(f'1 = {prediction}')
+    prediction = tree.predict([5, 100, 70, 0, 0, 70, 0])
+    print(f'0 = {prediction}')
+    prediction = tree.predict([6, 100, 60, 0, 0, 28, 0])
+    print(f'0 = {prediction}')
+    prediction = tree.predict([6, 100, 60, 0, 45, 30, 29])
+    print(f'1 = {prediction}')
+    prediction = tree.predict([6, 100, 60, 0, 42, 30, 29])
+    print(f'0 = {prediction}')
+    prediction = tree.predict([6, 100, 60, 20, 42, 30, 31])
+    print(f'0 = {prediction}')
+    prediction = tree.predict([6, 100, 60, 18, 42, 30, 31])
+    print(f'1 = {prediction}')
 
 
 def main():
@@ -41,7 +49,7 @@ def main():
     tree = RandomTree()
     tree.fit(features, labels)
     tree.print_tree(get_columns_dict(dataset))
-    # predict_values(tree)
+    predict_values(tree)
 
 
 if __name__ == '__main__':
