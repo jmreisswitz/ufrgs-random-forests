@@ -2,7 +2,7 @@
 import pandas as pd
 import numpy as np
 
-from random_forest import RandomTree
+from random_forest.random_tree import RandomTree
 
 
 def separate_dataset(dataset):

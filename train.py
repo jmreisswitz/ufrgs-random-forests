@@ -4,7 +4,7 @@ import numpy as np
 
 from evaluation_service import EvaluationService
 from kfold import Kfold
-from random_forest import RandomForest
+from random_forest.random_forest import RandomForest
 
 
 class Train:

@@ -1,113 +1,10 @@
 import numbers
-import random
-from abc import ABC, abstractmethod
-from math import sqrt
 
-import logging
 import pandas as pd
 import numpy as np
 
-from bootstrap import Bootstrap
 from gain_info2 import buildtree
-
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
-
-
-class RandomForest:
-    def __init__(self, ntree: int):
-        self.ntree = ntree
-        self.random_trees = self.init_trees()
-
-    def fit(self, train_features: np.array, train_labels: np.array):
-        bootstrap = Bootstrap(train_features, train_labels)
-        for random_tree in self.random_trees:
-            random_tree.fit(bootstrap.get_subset())
-
-    def predict(self, test_features) -> np.array:
-        tests_predictions = []
-        for test_feature in test_features:
-            random_trees_predictions = self._get_trees_predictions(test_feature)
-            tests_predictions.append(self._get_prediction_from_voting(random_trees_predictions))
-        return np.array(tests_predictions)
-
-    def init_trees(self) -> set:
-        random_trees = set()
-        for _ in range(self.ntree):
-            random_trees.add(RandomTree())
-        return random_trees
-
-    def _get_trees_predictions(self, test_feature):
-        predictions = []
-        for random_tree in self.random_trees:
-            predictions.append(random_tree.predict(test_feature))
-        return predictions
-
-    @staticmethod
-    def _get_prediction_from_voting(random_trees_predictions):
-        return max(set(random_trees_predictions), key=random_trees_predictions.count())
-
-
-class TreeNode(ABC):
-    def __init__(self, column, condition):
-        self.condition = condition
-        self.children = []
-        self.column = column
-
-    @abstractmethod
-    def predict_value(self, features):
-        pass
-
-    @staticmethod
-    def get_tabs(depth):
-        return '\t' * depth
-
-    def print_node(self, columns_names, depth):
-        print(f"{self.get_tabs(depth)}{self.condition} -> {self.__class__.__name__} {columns_names[self.column]}:")
-        for child in self.children:
-            child.print_node(columns_names, depth + 1)
-
-    def __repr__(self):
-        return_string = f'{self.condition} -> {self.__class__.__name__} {self.column}:'
-        for child in self.children:
-            return_string += f'\t{child}\n'
-        return return_string[:-1]
-
-
-class NumericalNode(TreeNode):
-    def __init__(self, column, condition, cutting_point, left_child: TreeNode, right_child: TreeNode):
-        # condition here is only used for printing purposes
-        super().__init__(column, condition)
-        self.cutting_point = cutting_point
-        self.children = [left_child, right_child]
-
-    def predict_value(self, features):
-        if self.cutting_point > features[self.column]:
-            return self.children[0].predict_value(features)
-        return self.children[1].predict_value(features)
-
-
-class LeafNode(TreeNode):
-    def __init__(self, condition, predicted_class):
-        super().__init__(None, condition)
-        self.predicted_class = predicted_class
-
-    def print_node(self, columns_names, depth):
-        print(f"{self.get_tabs(depth)}{self.condition} -> {self.__class__.__name__}: {self.predicted_class}")
-
-    def predict_value(self, features):
-        return self.predicted_class
-
-
-class CategoricalNode(TreeNode):
-    def __init__(self, condition, column, children, children_labels):
-        super().__init__(column, condition)
-        self.children_labels = children_labels
-        self.children = children
-
-    def predict_value(self, features):
-        label_index = self.children_labels.index(features[self.column])
-        return self.children[label_index].predict_value(features)
+from random_forest.tree_nodes import TreeNode, LeafNode, CategoricalNode, NumericalNode
 
 
 class TreeBuilder:
@@ -126,7 +23,7 @@ class TreeBuilder:
         # if all trains_labels are the same
         if len(set(self.train_labels)) == 1:
             return True
-         # or if there are no more features to evaluate
+        # or if there are no more features to evaluate
         if len(self.train_features) == 0:
             return True
         # or if all columns are already used
@@ -203,31 +100,3 @@ class TreeBuilder:
                                    if self.train_features[i][column] == value]
         return np.array([self.train_features[i] for i in value_indexes]), \
                 np.array([self.train_labels[i] for i in value_indexes])
-
-
-class RandomTree:
-    def __init__(self):
-        self.attributes_to_use = None
-        self.number_of_attributes_to_use = None
-        self.starting_node = None
-
-    def fit(self, train_features: np.array, train_labels: np.array):
-        if self.attributes_to_use is None:
-            self._init_attributes_to_use(train_features)
-        already_used_columns = set()
-        tree_builder = TreeBuilder('start', train_features, train_labels, already_used_columns)
-        self.starting_node = tree_builder.build_node()
-
-    def predict(self, test_feature):
-        return self.starting_node.predict_value(test_feature)
-
-    def _init_attributes_to_use(self, train_features: np.array):
-        number_of_attributes = len(train_features[0])
-        self.number_of_attributes_to_use = int(sqrt(number_of_attributes))
-        self.attributes_to_use = random.sample([i for i in range(number_of_attributes)], self.number_of_attributes_to_use)
-
-    def print_tree(self, columns_names: dict):
-        self.starting_node.print_node(columns_names, 0)
-
-    def __repr__(self):
-        return str(self.starting_node)

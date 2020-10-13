@@ -3,7 +3,7 @@ import random
 import pandas as pd
 
 from kfold import Kfold
-from random_forest import RandomForest
+from random_forest.random_forest import RandomForest
 from train import Train
 
 parser = argparse.ArgumentParser(description='Random Forests')
