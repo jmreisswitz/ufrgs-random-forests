@@ -82,7 +82,7 @@ class NumericalNode(TreeNode):
 
     def predict_value(self, features):
         if self.cutting_point > features:
-            return self.children[0].predict_features(features)
+            return self.children[0].predict_value(features)
         return self.children[1].predict_value(features)
 
 
@@ -96,9 +96,6 @@ class LeafNode(TreeNode):
 
     def predict_value(self, features):
         return self.predicted_class
-
-    def __repr__(self):
-        return f'{self.condition} -> {self.__class__.__name__}: {self.predicted_class}'
 
 
 class CategoricalNode(TreeNode):
@@ -175,21 +172,22 @@ class TreeBuilder:
         )
 
     def get_cutting_point_on_numerical_data(self, column):
-        return self.train_features[column].average()
+        column_data = [self.train_features[i][column] for i in range(len(self.train_features))]
+        return np.average(column_data)
 
     def get_prediction_label(self):
         train_labels_as_list = self.train_labels.tolist()
         return max(set(train_labels_as_list), key=train_labels_as_list.count)
 
     def divide_numerical_dataset(self, column, cutting_point):
-        bellow_cutting_point_indexes = [i for i in self.train_features[column]
-                                        if self.train_features[column] < cutting_point]
+        bellow_cutting_point_indexes = [i for i in range(len(self.train_features))
+                                        if self.train_features[i][column] < cutting_point]
         return np.array([self.train_features[i] for i in bellow_cutting_point_indexes]), \
                np.array([self.train_labels[i] for i in bellow_cutting_point_indexes]), \
                np.array([self.train_features[i] for i in range(len(self.train_features)) if
-                        self.train_features[i] not in bellow_cutting_point_indexes]), \
+                        i not in bellow_cutting_point_indexes]), \
                np.array([self.train_labels[i] for i in range(len(self.train_labels)) if
-                        self.train_labels[i] not in bellow_cutting_point_indexes])
+                        i not in bellow_cutting_point_indexes])
 
     def remove_categorical_data_from(self, value, column):
         value_indexes = [i for i in range(len(self.train_features))
