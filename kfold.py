@@ -1,9 +1,14 @@
 from functools import reduce
 from random import shuffle
-from typing import Tuple
 
 import numpy as np
 import pandas as pd
+
+"""
+Created on Mon Oct 12 15:14:30 2020
+
+@author: edu & mario
+"""
 
 
 class Kfold:
@@ -27,30 +32,46 @@ class Kfold:
         test_labels = [self.labels[i] for i in test_indexes]
         return np.array(train_features), np.array(test_features), np.array(train_labels), np.array(test_labels)
 
-    def separate_labels(self) -> Tuple[list, list]:
-        positive_labels = []
-        negative_labels = []
-        for i in range(len(self.labels)):
-            if self.labels[i] == 1:
-                positive_labels.append(i)
-            else:
-                negative_labels.append(i)
-        return positive_labels, negative_labels
+    def uniquecounts(self):
+        results = {}
+        for row in self.labels:
+            if row not in results:
+                results[row] = 0
+            results[row] += 1
+        return results
+
+    def separate_labels(self):
+        class_labels = []
+        final_class = []
+        results = self.uniquecounts()
+        for r in results.keys():
+            for i in range(len(self.labels)):
+                if self.labels[i] == r:
+                    class_labels.append(i)
+            final_class.append([col for col in class_labels])
+            class_labels.clear()
+        return final_class
 
     def _generate_folds(self):
-        positive_indexes, negative_indexes = self.separate_labels()
-        shuffle(positive_indexes)
-        shuffle(negative_indexes)
-        fold_negative_indexes_size = int(len(negative_indexes)/self.folds_num)
-        fold_positive_indexes_size = int(len(positive_indexes) / self.folds_num)
-        fold_positive_begin = 0
-        fold_negative_begin = 0
+        indexes = self.separate_labels()
+        for row in indexes:
+            shuffle(row)
+        results = [int(len(row) / self.folds_num) for row in indexes]
+        fold_begin = [0 for row in indexes]
         folds = []
         for _ in range(self.folds_num):
-            folds.append(
-                positive_indexes[fold_positive_begin: fold_positive_begin + fold_positive_indexes_size]
-                + negative_indexes[fold_negative_begin: fold_negative_begin + fold_negative_indexes_size]
-            )
-            fold_positive_begin += fold_positive_indexes_size
-            fold_negative_begin += fold_negative_indexes_size
+            n_fold = []
+            for i in range(0, len(indexes)):
+                n_fold = n_fold + indexes[i][fold_begin[i]: fold_begin[i] + results[i]]
+                fold_begin[i] = fold_begin[i] + results[i]
+            folds.append(n_fold)
         return folds
+
+
+if __name__ == '__main__':
+    my_data = pd.read_csv('datasets/wine-recognition.tsv', sep='\t')
+    folds_num = 10
+    kfolds = Kfold(my_data, 'target')
+    print(kfolds._generate_folds())
+    for fold in kfolds.get_next_fold():
+        print(fold)
