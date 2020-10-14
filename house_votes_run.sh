@@ -1,0 +1,1 @@
+python3 main.py --dataset house-votes-84.tsv --target_column target --ntree 20
