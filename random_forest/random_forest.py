@@ -14,7 +14,7 @@ class RandomForest:
         bootstrap = Bootstrap(train_features, train_labels)
         for random_tree in self.random_trees:
             random_tree.fit(*bootstrap.get_subset())
-            random_tree.print_tree(None)
+            # random_tree.print_tree(None)
 
     def predict_test_data(self, test_features) -> np.array:
         tests_predictions = []

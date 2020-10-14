@@ -46,7 +46,7 @@ def get_possible_features(dataset) -> dict:
 def main():
     dataset = pd.read_csv('datasets/benchmark.csv', sep=';')
     features, labels = separate_dataset(dataset)
-    tree = RandomTree(get_possible_features(dataset), use_all_attribs=True)
+    tree = RandomTree(get_possible_features(dataset), use_all_attribs=True, verbose=True)
     tree.attributes_to_use = len(labels)
     tree.fit(features, labels)
     tree.print_tree(get_columns_dict(dataset))

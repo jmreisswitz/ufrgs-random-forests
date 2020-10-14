@@ -8,7 +8,16 @@ from random_forest.tree_nodes import TreeNode, LeafNode, CategoricalNode, Numeri
 
 
 class TreeBuilder:
-    def __init__(self, condition_value, train_features: np.array, train_labels: np.array, already_used_columns: set, possible_values: dict):
+    def __init__(
+            self,
+             condition_value,
+             train_features: np.array,
+             train_labels: np.array,
+             already_used_columns: set,
+             possible_values: dict,
+             verbose=False
+            ):
+        self.verbose = verbose
         self.possible_values = possible_values
         self.condition_value = condition_value
         self.train_features = train_features
@@ -36,7 +45,8 @@ class TreeBuilder:
         if self.is_leaf_node():
             return LeafNode(self.condition_value, self.get_prediction_label())
         information_score, best_column, _ = self.get_best_feature()
-        print(f'Got score {information_score} from {best_column}')
+        if self.verbose:
+            print(f'Got score {information_score} from {best_column}')
         if best_column is None:
             return LeafNode(self.condition_value, self.get_prediction_label())
         if self.is_categorical_data(best_column):
@@ -62,7 +72,7 @@ class TreeBuilder:
             return LeafNode(self.condition_value, self.get_prediction_label())
         for possible_value in current_possible_values:
             new_train_features, new_train_labels = self.remove_categorical_data_from(possible_value, column)
-            builder = TreeBuilder(possible_value, new_train_features, new_train_labels, self.get_new_already_used_columns(column), self.possible_values)
+            builder = TreeBuilder(possible_value, new_train_features, new_train_labels, self.get_new_already_used_columns(column), self.possible_values, verbose=self.verbose)
             children_list.append(builder.build_node())
             children_labels.append(possible_value)
         return CategoricalNode(self.condition_value, column, children_list, children_labels)
@@ -70,8 +80,8 @@ class TreeBuilder:
     def generate_numerical_children(self, column) -> NumericalNode:
         cutting_point = self.get_cutting_point_on_numerical_data(column)
         left_features, left_labels, right_features, right_labels = self.divide_numerical_dataset(column, cutting_point)
-        left_builder = TreeBuilder(f'< {cutting_point}', left_features, left_labels, self.get_new_already_used_columns(column), self.possible_values)
-        right_builder = TreeBuilder(f'> {cutting_point}', right_features, right_labels, self.get_new_already_used_columns(column), self.possible_values)
+        left_builder = TreeBuilder(f'< {cutting_point}', left_features, left_labels, self.get_new_already_used_columns(column), self.possible_values, verbose=self.verbose)
+        right_builder = TreeBuilder(f'> {cutting_point}', right_features, right_labels, self.get_new_already_used_columns(column), self.possible_values, verbose=self.verbose)
         return NumericalNode(
             column,
             self.condition_value,

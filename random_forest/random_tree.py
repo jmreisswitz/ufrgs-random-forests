@@ -7,7 +7,8 @@ from random_forest.tree_builder import TreeBuilder
 
 
 class RandomTree:
-    def __init__(self, possible_values_for_features: dict, use_all_attribs=False):
+    def __init__(self, possible_values_for_features: dict, use_all_attribs=False, verbose=False):
+        self.verbose = verbose
         self.use_all_attribs = use_all_attribs
         self.possible_values_for_features = possible_values_for_features
         self.attributes_to_use = None
@@ -19,7 +20,7 @@ class RandomTree:
         if self.attributes_to_use is None and not self.use_all_attribs:
             self._init_attributes_to_use(train_features)
             already_used_columns = self.get_not_usable_columns(len(train_features))
-        tree_builder = TreeBuilder('start', train_features, train_labels, already_used_columns, self.possible_values_for_features)
+        tree_builder = TreeBuilder('start', train_features, train_labels, already_used_columns, self.possible_values_for_features, verbose=self.verbose)
         self.starting_node = tree_builder.build_node()
 
     def predict(self, test_feature):
