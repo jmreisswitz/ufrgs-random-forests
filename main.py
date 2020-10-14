@@ -1,6 +1,7 @@
 import argparse
 import random
 import pandas as pd
+import numpy as np
 
 from train import Train
 
@@ -32,8 +33,13 @@ def get_dataset():
 
 def print_model_performance(model_performance):
     print('kfold,accuracy')
+    accuracies = []
     for fold, accuracy in model_performance:
         print(f'{fold},{accuracy}')
+        accuracies.append(accuracy)
+    accuracies = np.array(accuracies)
+    print(f'mean,{accuracies.mean()}')
+    print(f'standard deviation,{accuracies.std()}')
 
 
 def main():
