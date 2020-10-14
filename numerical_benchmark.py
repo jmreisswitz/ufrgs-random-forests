@@ -44,7 +44,7 @@ def predict_values(tree):
 def main():
     dataset = pd.read_csv('datasets/diabetes.csv', sep=',')
     features, labels = separate_dataset(dataset)
-    tree = RandomTree({})
+    tree = RandomTree({}, use_all_attribs=True)
     tree.fit(features, labels)
     tree.print_tree(get_columns_dict(dataset))
     predict_values(tree)
