@@ -2,7 +2,6 @@ import argparse
 import random
 import pandas as pd
 
-from random_forest.random_forest import RandomForest
 from train import Train
 
 parser = argparse.ArgumentParser(description='Random Forests')
@@ -41,9 +40,9 @@ def main():
     random.seed(42)
     dataset = get_dataset()
     train = Train(
-        RandomForest(get_ntree_from_argparser()),
         dataset,
-        get_target_column_from_argparser(dataset)
+        get_target_column_from_argparser(dataset),
+        get_ntree_from_argparser()
     )
     model_performance = train.execute()
     print_model_performance(model_performance)

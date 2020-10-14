@@ -5,7 +5,8 @@ from random_forest.random_tree import RandomTree
 
 
 class RandomForest:
-    def __init__(self, ntree: int):
+    def __init__(self, ntree: int, possible_values: dict):
+        self.possible_values = possible_values
         self.ntree = ntree
         self.random_trees = self.init_trees()
 
@@ -28,7 +29,7 @@ class RandomForest:
     def init_trees(self) -> set:
         random_trees = set()
         for _ in range(self.ntree):
-            random_tree = RandomTree()
+            random_tree = RandomTree(self.possible_values)
             random_trees.add(random_tree)
         return random_trees
 

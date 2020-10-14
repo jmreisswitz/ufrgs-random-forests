@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+from pandas.core.dtypes.common import is_numeric_dtype
 
 from random_forest.random_tree import RandomTree
 
@@ -32,10 +33,20 @@ def predict_values(tree):
     print(f'Não = {prediction}')
 
 
+def get_possible_features(dataset) -> dict:
+    possibilities_dict = dict()
+    counter = 0
+    for column in dataset.columns:
+        if not is_numeric_dtype(dataset[column]):
+            possibilities_dict[counter] = set(dataset[column].unique())
+        counter += 1
+    return possibilities_dict
+
+
 def main():
     dataset = pd.read_csv('datasets/benchmark.csv', sep=';')
     features, labels = separate_dataset(dataset)
-    tree = RandomTree()
+    tree = RandomTree(get_possible_features(dataset))
     tree.fit(features, labels)
     tree.print_tree(get_columns_dict(dataset))
     predict_values(tree)

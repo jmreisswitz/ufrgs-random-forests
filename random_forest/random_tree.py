@@ -1,3 +1,4 @@
+import numbers
 from math import sqrt
 import random
 
@@ -7,7 +8,8 @@ from random_forest.tree_builder import TreeBuilder
 
 
 class RandomTree:
-    def __init__(self):
+    def __init__(self, possible_values_for_features: dict):
+        self.possible_values_for_features = possible_values_for_features
         self.attributes_to_use = None
         self.number_of_attributes_to_use = None
         self.starting_node = None
@@ -16,7 +18,7 @@ class RandomTree:
         if self.attributes_to_use is None:
             self._init_attributes_to_use(train_features)
         already_used_columns = set()
-        tree_builder = TreeBuilder('start', train_features, train_labels, already_used_columns)
+        tree_builder = TreeBuilder('start', train_features, train_labels, already_used_columns, self.possible_values_for_features)
         self.starting_node = tree_builder.build_node()
 
     def predict(self, test_feature):
