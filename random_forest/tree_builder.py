@@ -36,6 +36,8 @@ class TreeBuilder:
             return LeafNode(self.condition_value, self.get_prediction_label())
         information_score, best_column, _ = self.get_best_feature()
         print(f'Got score {information_score} from {best_column}')
+        if best_column is None:
+            return LeafNode(self.condition_value, self.get_prediction_label())
         if self.is_categorical_data(best_column):
             return self.generate_categorical_children(best_column)
         else:
