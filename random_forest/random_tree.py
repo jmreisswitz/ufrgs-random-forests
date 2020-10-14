@@ -17,7 +17,7 @@ class RandomTree:
     def fit(self, train_features: np.array, train_labels: np.array):
         if self.attributes_to_use is None:
             self._init_attributes_to_use(train_features)
-        already_used_columns = set()
+        already_used_columns = self.get_not_usable_columns(len(train_features))
         tree_builder = TreeBuilder('start', train_features, train_labels, already_used_columns, self.possible_values_for_features)
         self.starting_node = tree_builder.build_node()
 
@@ -31,3 +31,7 @@ class RandomTree:
 
     def print_tree(self, columns_names: dict):
         self.starting_node.print_node(columns_names, 0)
+
+    def get_not_usable_columns(self, number_of_features):
+        all_attributes_set = set([i for i in range(number_of_features)])
+        return all_attributes_set - set(self.attributes_to_use)
