@@ -9,7 +9,7 @@ class Bootstrap:
         self.features = features
         self.number_of_rows = len(features)
         self.rows_indexes = [i for i in range(self.number_of_rows)]
-        self.subset_size = 1.5
+        self.subset_size = 1.0
 
     def get_subset(self):
         features_subset = []
